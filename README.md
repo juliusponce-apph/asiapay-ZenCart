@@ -20,7 +20,7 @@ This plugin supports ZenCart version 1.3.8 and higher.
  4. On the confirmation page, review your changes then click the “Confirm button”.
 
  ## Documentation
-[ZenCart documentation]()
+[ZenCart documentation](https://github.com/asiapay-lib/asiapay-ZenCart/blob/master/PayDollar_PayGate_Integration_Guide_(Zen%20Cart%20v1.3.8)_1.0.doc?raw=true)
 
 ## Support
 If you have a feature request, or spotted a bug or a technical problem, create a GitHub issue. For other questions, contact our [Customer Service](https://www.paydollar.com/en/contactus.html).

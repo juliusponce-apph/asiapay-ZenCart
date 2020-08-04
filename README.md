@@ -2,7 +2,7 @@
 Use PayDollar/SaimPay/PesoPays plugin for Magento to offer ALL payments option.
 
 ## Integration
-The plugin integrates integrate ZenCart with PayDollar/SaimPay/PesoPay payment gateway with All payment method.
+The plugin integrates ZenCart with PayDollar/SaimPay/PesoPay payment gateway with All payment method.
 
 ## Requirements
 This plugin supports ZenCart version 1.3.8 and higher.

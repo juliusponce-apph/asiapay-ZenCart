@@ -162,7 +162,40 @@ $successUrl = $_POST['successUrl'];
 $failUrl = $_POST['failUrl'];
 $cancelUrl = $_POST['cancelUrl'];
 
-header ('Location: '.$form_action_url.'?orderRef='.$orderRef.'&currCode='.$currCode.'&amount='.$amount.'&paymentMethod=CC&payType='.$payType.'&lang='.$lang.'&merchantId='.$merchantId.'&successUrl='.$successUrl.'&failUrl='.$failUrl.'&cancelUrl='.$cancelUrl);
+
+$payType = $_POST['payType'];	
+$secureHashSecret = $_POST['secureHashSecret'];
+if ($secureHashSecret) {
+  require_once ('SHAPaydollarSecure.php');
+  $paydollarSecure = new SHAPaydollarSecure ();
+  $secureHash = $paydollarSecure->generatePaymentSecureHash ( $merchantId, $orderRef, $currCode, $amount, $payType, $secureHashSecret );
+  $_POST['secureHash'] = $secureHash;
+} else {
+  $_POST['secureHash'] = '';
+}
+
+
+$data3ds2['threeDSTransType'] = $_POST['threeDSTransType'];
+$data3ds2['threeDSChallengePreference'] = $_POST['threeDSChallengePreference'];
+
+$account_info_query = "SELECT * FROM " . TABLE_CUSTOMERS_INFO . "
+               WHERE customers_info_id = :customersID";
+               
+$account_info_query = $db->bindVars($account_info_query, ':customersID', $_SESSION['customer_id'], 'integer');
+$acct_info = $db->Execute($account_info_query);
+  // echo "<pre>";
+  // print_r($acct_info);
+
+include_once('PaydollarThreeDs.php');
+// echo "<pre>";
+// print_r($orders);
+
+$data3ds2 = array_merge($data3ds2,$arrThreeDSData);
+
+$threeDSParam = http_build_query($data3ds2);
+// echo $threeDSParam;exit;
+header ('Location: '.$form_action_url.'?orderRef='.$orderRef.'&currCode='.$currCode.'&amount='.$amount.'&paymentMethod=CC&payType='.$payType.'&lang='.$lang.'&merchantId='.$merchantId.'&successUrl='.$successUrl.'&failUrl='.$failUrl.'&cancelUrl='.$cancelUrl.'&payType='.$payType.'&secureHash='.$secureHash."&".$threeDSParam);
+
 
 }else if($integrationType=="directClient"){
 $form_action_url = $_POST['actionUrl'];

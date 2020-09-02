@@ -161,7 +161,11 @@ class paydollar extends base {
 								  <input type="hidden" name="integrationType" value="clientPost">
                                   <input type="hidden" name="lang" value="'. $this->getLanguageCode() .'">
 								  <input type="hidden" name="orderRefPrefix" value="'.MODULE_PAYMENT_PAYDOLLAR_ORDERREF .'"/>
-								  '.$redirectSection; //just added - 10202011
+                  '.$redirectSection.'
+                  <input type="hidden" name="secureHashSecret" value="'. MODULE_PAYMENT_PAYDOLLAR_SHSKEY .'"/>
+                  <input type="hidden" name="payType" value="'.$this->getPaymentType() .'"/>
+                  <input type="hidden" name="threeDSTransType" value="'.$this->getTransactionType() .'"/>
+                  <input type="hidden" name="threeDSChallengePreference" value="'.$this->getChallengePref() .'"/>'; //just added - 10202011//paytype added 20181220
 								  
   return $process_button_string;
   }
@@ -182,17 +186,17 @@ class paydollar extends base {
   }
   
   
-    /*“344” - HKD
-    “840” – USD
-    “702” – SGD
-    “156” – CNY (RMB)
-    “392” – JPY
-    “901” – TWD
-    “036” – AUD
-    “978” – EUR
-    “826” – GBP
-    “124” – CAD
-    “608” – PHP
+    /*ï¿½344ï¿½ - HKD
+    ï¿½840ï¿½ ï¿½ USD
+    ï¿½702ï¿½ ï¿½ SGD
+    ï¿½156ï¿½ ï¿½ CNY (RMB)
+    ï¿½392ï¿½ ï¿½ JPY
+    ï¿½901ï¿½ ï¿½ TWD
+    ï¿½036ï¿½ ï¿½ AUD
+    ï¿½978ï¿½ ï¿½ EUR
+    ï¿½826ï¿½ ï¿½ GBP
+    ï¿½124ï¿½ ï¿½ CAD
+    ï¿½608ï¿½ ï¿½ PHP
   */
   function getCurrencyCode(){
 
@@ -229,12 +233,61 @@ class paydollar extends base {
   }
 
   /*
+    The transaction type of the payment page i.e.
+  */
+  function getTransactionType(){
+    switch (MODULE_PAYMENT_PAYDOLLAR_TRANSTYPE) {
+         case 'Goods/ Service Purchase':  $type = '01';
+                 break;
+         case 'Check Acceptance':  $type = '03';
+                break;
+         case 'Account Funding':  $type = '10';
+                break;
+         case 'Quasi-Cash Transaction':  $type = '11';
+                break;
+         case 'Prepaid Activation and Load':  $type = '28';
+                break;
+         default:  $type = '01';
+    
+    }
+    return $type;
+  }
+
+  /*
+    The Challenge Pref of the payment page i.e.
+  */
+  function getChallengePref(){
+    switch (MODULE_PAYMENT_PAYDOLLAR_CHALLENGEPREF) {
+         case 'No preference':  $type = '01';
+                 break;
+         case 'No challenge requested*':  $type = '02';
+                break;
+         case 'Challenge requested (Merchant preference)':  $type = '03';
+                break;
+         case 'Challenge requested (Mandate)':  $type = '04';
+                break;
+         case 'No challenge requested (transactional risk analysis is already performed)*':  $type = '05';
+                break;
+         case 'No challenge requested (Data share only)*':  $type = '06';
+                break;
+         case 'No challenge requested (strong consumer authentication is already performed)*':  $type = '07';
+                break;
+         case 'No challenge requested (utilise whitelist exemption if no challenge required)*':  $type = '08';
+                break;
+         case 'Challenge requested (whitelist prompt requested if challenge required)':  $type = '09';
+                break;
+         default:  $type = '01';
+    }
+    return $type;
+  }
+
+  /*
     The language of the payment page i.e.
-    “C” – Traditional Chinese
-    “E” – English
-    “X” – Simplified Chinese
-    “K” – Korean
-    “J” – Japanese
+    ï¿½Cï¿½ ï¿½ Traditional Chinese
+    ï¿½Eï¿½ ï¿½ English
+    ï¿½Xï¿½ ï¿½ Simplified Chinese
+    ï¿½Kï¿½ ï¿½ Korean
+    ï¿½Jï¿½ ï¿½ Japanese
   */
   function getLanguageCode(){
        switch (MODULE_PAYMENT_PAYDOLLAR_LANGUAGE) {
@@ -254,6 +307,24 @@ class paydollar extends base {
 
     return $lang;
   }
+
+  /*
+    The payment type of the payment page i.e.
+    ï¿½Nï¿½ ï¿½ N-Normal Payment (Sales)
+    ï¿½Hï¿½ ï¿½ H-Hold Payment (Authorize only)
+  */
+  function getPaymentType(){
+    switch (MODULE_PAYMENT_PAYDOLLAR_PAYTYPE) {
+         case 'N-Normal Payment (Sales)':  $paytype = 'N';
+                 break;
+         case 'H-Hold Payment (Authorize only)':  $paytype = 'H';
+                break;
+         default:  $paytype = 'N';
+    
+ }
+
+ return $paytype;  
+}
   /**
    * Store the PAYDOLLAR info to the order
    *
@@ -311,15 +382,28 @@ function check_referrer($zf_domain) {
  function install() {
     global $db;
     $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Enable PayDollar Module', 'MODULE_PAYMENT_PAYDOLLAR_STATUS', 'True', 'Do you want to accept Paydollar payments?', '6', '0', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+
     $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Paydollar ID', 'MODULE_PAYMENT_PAYDOLLAR_ID', '1', 'The merchant id used for the Paydollar service', '6', '0', now())");
     $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Transaction Currency', 'MODULE_PAYMENT_PAYDOLLAR_CURRENCY', 'Only USD', 'Choose the currency/currencies you want to accept', '6', '0', 'zen_cfg_select_option(array(\'Only HKD\',\'Only USD\',\'Only SGD\',\'Only CNY\',\'Only JPY\',\'Only TWD\',\'Only AUD\',\'Only EUR\',\'Only GBP\',\'Only CAD\',\'Only PHP\',\'Only ZAR\'), ', now())");  
     $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Sort order of display.', 'MODULE_PAYMENT_PAYDOLLAR_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '134' , now())");
     $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Language', 'MODULE_PAYMENT_PAYDOLLAR_LANGUAGE', 'English', 'Please choose the language page', '6', '0' , 'zen_cfg_select_option(array(\'Traditional Chinese\',\'English\',\'Simplified Chinese\',\'Korean\',\'Japanese\'), ', now())");
     $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('Set Order Status', 'MODULE_PAYMENT_PAYDOLLAR_ORDER_STATUS_ID', '0', 'Set the status of orders made with this payment module to this value', '6', '136', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
-    $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Paydollar server', 'MODULE_PAYMENT_PAYDOLLAR_HANDLER', 'https://test.paydollar.com/b2cDemo/eng/payment/payForm.jsp', 'Type the server that will handle the transaction. The default is:  <br/><br/><i>Production Site: <br/></i><code>https://www.paydollar.com/b2c2/eng/payment/payForm.jsp</code><br/><br/><i>Test Site: </i><br/><code>https://test.paydollar.com/b2cDemo/eng/payment/payForm.jsp</code>', '6', '0', now())");
+    $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Paydollar server', 'MODULE_PAYMENT_PAYDOLLAR_HANDLER', 'https://test.pesopay.com/b2cDemo/eng/payment/payForm.jsp', 'Type the server that will handle the transaction. The default is:  <br/><br/><i>Production Site: <br/></i><code>https://www.paydollar.com/b2c2/eng/payment/payForm.jsp</code><br/><br/> <code>https://www.pesopay.com/b2c2/eng/payment/payForm.jsp</code><br/> <i>Test Site: </i><br/><code>https://test.paydollar.com/b2cDemo/eng/payment/payForm.jsp</code> <br/><br/> <code>https://test.pesopay.com/b2cDemo/eng/payment/payForm.jsp</code>', '6', '0', now())");
 	$db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Order Reference Prefix', 'MODULE_PAYMENT_PAYDOLLAR_ORDERREF', 'PAYDOLLAR','The merchant reference id is needed to monitor the orders and the transactions in Paydollar.  The prefix here will be automatically added to the merchant reference id with a - dash should you wish to use this Order Reference Prefix.', '6', '0', now())");
   	//just added - 10182011
-	$db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Redirect Time', 'MODULE_PAYMENT_PAYDOLLAR_REDIRECT', '10', 'The number of seconds to auto-redirect back to merchant site from Paydollar Payment Success / Fail page. If empty, the default will be 10 seconds.', '6', '0', now())");
+  $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Redirect Time', 'MODULE_PAYMENT_PAYDOLLAR_REDIRECT', '10', 'The number of seconds to auto-redirect back to merchant site from Paydollar Payment Success / Fail page. If empty, the default will be 10 seconds.', '6', '0', now())");
+  
+  //julius 2018-12-20
+  //secure hash secret key
+  $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('Secure Hash Secret Key', 'MODULE_PAYMENT_PAYDOLLAR_SHSKEY', '1', 'The Secure Hash Secret â€“ Assigned by Paydollar to merchant', '6', '0', now())");
+  $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Payment Type', 'MODULE_PAYMENT_PAYDOLLAR_PAYTYPE', 'N-Normal Payment (Sales)', 'Please choose the payment Type used for the Paydollar service', '6', '0' , 'zen_cfg_select_option(array(\'N-Normal Payment (Sales)\',\'H-Hold Payment (Authorize only)\'), ', now())");
+
+  //3DS2.0
+    $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Transaction Type', 'MODULE_PAYMENT_PAYDOLLAR_TRANSTYPE', 'Goods/ Service Purchase', 'Please choose the Transaction Type used for the Paydollar service', '6', '0' , 'zen_cfg_select_option(array(\'Goods/ Service Purchase\',\'Check Acceptance\',\'Account Funding\',\'Quasi-Cash Transaction\',\'Prepaid Activation and Load\'), ', now())");
+
+    $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) values ('Challenge Type', 'MODULE_PAYMENT_PAYDOLLAR_CHALLENGEPREF', 'No preference', 'Please choose the Challenge preference used for the Paydollar service. * If \'No challenge requested\' options are selected, the chargeback liability shift to merchant.', '6', '0' , 'zen_cfg_select_option(array(\'No preference\',\'No challenge requested*\',\'Challenge requested (Merchant preference)\',\'Challenge requested (Mandate)\',\'No challenge requested (transactional risk analysis is already performed)*\',\'No challenge requested (Data share only)*\',\'No challenge requested (strong consumer authentication is already performed)*\',\'No challenge requested (utilise whitelist exemption if no challenge required)*\',\'Challenge requested (whitelist prompt requested if challenge required)\'), ', now())");
+
+  // $db->Execute("insert into " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order,set_function, date_added) values ('Payment Type', 'MODULE_PAYMENT_PAYDOLLAR_PAYTYPE', 'N', 'The Payment Type used for the Paydollar service', '6','0', 'zen_cfg_select_option(array(\'N-Normal Payment (Sales)\',\'H-Hold Payment (Authorize only)\'),', now())");
 }
   /**
    * Remove the module and all its settings
@@ -335,7 +419,7 @@ function check_referrer($zf_domain) {
    * @return array
    */
   function keys() {
-    return array('MODULE_PAYMENT_PAYDOLLAR_STATUS', 'MODULE_PAYMENT_PAYDOLLAR_ID', 'MODULE_PAYMENT_PAYDOLLAR_CURRENCY', 'MODULE_PAYMENT_PAYDOLLAR_SORT_ORDER', 'MODULE_PAYMENT_PAYDOLLAR_LANGUAGE', 'MODULE_PAYMENT_PAYDOLLAR_ORDER_STATUS_ID','MODULE_PAYMENT_PAYDOLLAR_HANDLER','MODULE_PAYMENT_PAYDOLLAR_ORDERREF', 'MODULE_PAYMENT_PAYDOLLAR_REDIRECT');
+    return array('MODULE_PAYMENT_PAYDOLLAR_STATUS', 'MODULE_PAYMENT_PAYDOLLAR_ID', 'MODULE_PAYMENT_PAYDOLLAR_CURRENCY', 'MODULE_PAYMENT_PAYDOLLAR_SORT_ORDER', 'MODULE_PAYMENT_PAYDOLLAR_LANGUAGE', 'MODULE_PAYMENT_PAYDOLLAR_ORDER_STATUS_ID','MODULE_PAYMENT_PAYDOLLAR_HANDLER','MODULE_PAYMENT_PAYDOLLAR_ORDERREF', 'MODULE_PAYMENT_PAYDOLLAR_REDIRECT','MODULE_PAYMENT_PAYDOLLAR_SHSKEY','MODULE_PAYMENT_PAYDOLLAR_PAYTYPE','MODULE_PAYMENT_PAYDOLLAR_TRANSTYPE','MODULE_PAYMENT_PAYDOLLAR_CHALLENGEPREF');//,'MODULE_PAYMENT_PAYDOLLAR_TRANSTYPE','MODULE_PAYMENT_PAYDOLLAR_CHALLENGEPREF'
   }
 }
 ?>
